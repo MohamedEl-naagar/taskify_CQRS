@@ -12,7 +12,7 @@ export class TaskController {
 
   @Post()
   async create(@Body() commandDto: CreateTaskCommand): Promise<void> {
-    await this.commandBus.execute(
+    return await this.commandBus.execute(
       new CreateTaskCommand(commandDto.title, commandDto.description),
     );
   }
