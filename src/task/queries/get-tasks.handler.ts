@@ -1,13 +1,18 @@
 import { QueryHandler, IQueryHandler } from '@nestjs/cqrs';
 import { GetAllTaskQuery } from './get-tasks.query';
-import { PrismaService } from 'src/db/db.service';
+import { PrismaService } from 'src/PostgresDB/db.service';
 import { Inject } from '@nestjs/common';
 import Redis from 'ioredis';
+import { InjectModel } from '@nestjs/mongoose';
+import { TaskDocument } from 'src/MongoDB/schema/task.shema';
+import { Model } from 'mongoose';
 
 @QueryHandler(GetAllTaskQuery)
 export class GetAllTasksHandler implements IQueryHandler<GetAllTaskQuery> {
   constructor(
-    private readonly prisma: PrismaService,
+    @InjectModel('Task')
+    private TaskModel: Model<TaskDocument>,
+
     @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
   ) {}
 
@@ -21,8 +26,8 @@ export class GetAllTasksHandler implements IQueryHandler<GetAllTaskQuery> {
       return JSON.parse(cachedData);
     }
 
-    // Fetch from database
-    const tasks = await this.prisma.task.findMany();
+    // Fetch from ----- Mongo ---- database
+    const tasks = await this.TaskModel.find();
 
     // Cache the result
     await this.redisClient.set(cacheKey, JSON.stringify(tasks), 'EX', 60); // Cache for 60 seconds
